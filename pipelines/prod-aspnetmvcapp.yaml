@@ -7,11 +7,11 @@ spec:
     - description: Git commitId of the change to deploy
       name: IMAGE_TAG
       type: string
-    - default: 'registry.ocp2.jonkey.cc:5000/aspnetmvcapp-dev/aspnetmvcapp'
+    - default: 'registry.jonkey.cc:5000/aspnetmvcapp-dev/aspnetmvcapp'
       description: Source image url without tag
       name: SRC_IMAGE_URL
       type: string
-    - default: 'registry.ocp2.jonkey.cc:5000/devopstest-prod/aspnetmvcapp'
+    - default: 'registry.jonkey.cc:5000/devopstest-prod/aspnetmvcapp'
       description: Destination image url without tag
       name: DEST_IMAGE_URL
       type: string

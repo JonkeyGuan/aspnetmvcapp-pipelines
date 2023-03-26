@@ -13,7 +13,7 @@ spec:
     - default: ''
       name: GIT_REVISION
       type: string
-    - default: 'registry.ocp2.jonkey.cc:5000/aspnetmvcapp-dev'
+    - default: 'registry.jonkey.cc:5000/aspnetmvcapp-dev'
       name: IMAGE_REPO
       type: string
     - default: win2022
