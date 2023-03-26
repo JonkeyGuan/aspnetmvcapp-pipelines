@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: aspnetmvcapp
+    app.kubernetes.io/component: aspnetmvcapp
+    app.kubernetes.io/instance: aspnetmvcapp
+  name: aspnetmvcapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: aspnetmvcapp
+  template:
+    metadata:
+      labels:
+        deployment: aspnetmvcapp
+    spec:
+      containers:
+      - image: registry.jonkey.cc:5000/aspnetmvcapp-dev/aspnetmvcapp:v1
+        name: aspnetmvcapp
+        ports:
+          - containerPort: 80
+            protocol: TCP
+      nodeSelector:
+        kubernetes.io/os: windows
+      tolerations:
+        - key: os
+          operator: Equal
+          value: Windows
+          effect: NoSchedule

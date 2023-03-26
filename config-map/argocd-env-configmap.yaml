@@ -1,0 +1,6 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: argocd-env-configmap
+data:
+  ARGOCD_SERVER: openshift-gitops-server.openshift-gitops.svc.cluster.local

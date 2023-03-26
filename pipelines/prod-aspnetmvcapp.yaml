@@ -1,0 +1,84 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: prod-aspnetmvcapp
+spec:
+  params:
+    - description: Git commitId of the change to deploy
+      name: IMAGE_TAG
+      type: string
+    - default: 'registry.ocp2.jonkey.cc:5000/aspnetmvcapp-dev/aspnetmvcapp'
+      description: Source image url without tag
+      name: SRC_IMAGE_URL
+      type: string
+    - default: 'registry.ocp2.jonkey.cc:5000/devopstest-prod/aspnetmvcapp'
+      description: Destination image url without tag
+      name: DEST_IMAGE_URL
+      type: string
+    - default: 'http://gitea-git.apps.ocp2.jonkey.cc/jonkey/aspnetmvcapp-kustomize.git'
+      description: Kustomize git repo for CD
+      name: KUSTOMIZE_GIT_URL
+      type: string
+    - default: aspnetmvcapp/overlays/prod
+      description: Kustomize git repo context directory for CD
+      name: KUSTOMIZE_GIT_CONTEXT_DIR
+      type: string
+    - default: master
+      description: Kustomize git repo branch
+      name: KUSTOMIZE_GIT_BRANCH
+      type: string
+  tasks:
+    - name: skopeo-copy
+      params:
+        - name: srcImageURL
+          value: 'docker://$(params.SRC_IMAGE_URL):$(params.IMAGE_TAG)'
+        - name: destImageURL
+          value: 'docker://$(params.DEST_IMAGE_URL):$(params.IMAGE_TAG)'
+        - name: srcTLSverify
+          value: 'false'
+        - name: destTLSverify
+          value: 'false'
+      taskRef:
+        kind: ClusterTask
+        name: skopeo-copy
+      workspaces:
+        - name: images-url
+          workspace: images-url
+    - name: update-kustomize-repo
+      params:
+        - name: gitRepositoryUrl
+          value: $(params.KUSTOMIZE_GIT_URL)
+        - name: gitRepositoryRevision
+          value: $(params.KUSTOMIZE_GIT_BRANCH)
+        - name: gitPath
+          value: $(params.KUSTOMIZE_GIT_CONTEXT_DIR)
+        - name: fileName
+          value: deployment-patches.yaml
+        - name: imageTag
+          value: $(params.IMAGE_TAG)
+        - name: verbose
+          value: 'true'
+        - name: sslVerify
+          value: 'false'
+      runAfter:
+        - skopeo-copy
+      taskRef:
+        kind: Task
+        name: update-kustomize-repo
+      workspaces:
+        - name: repository
+          workspace: kustomize-repo
+    - name: sync-application
+      params:
+        - name: application-name
+          value: prod-devopstest-web
+        - name: flags
+          value: '--insecure'
+      runAfter:
+        - update-kustomize-repo
+      taskRef:
+        kind: ClusterTask
+        name: argocd-task-sync-and-wait
+  workspaces:
+    - name: images-url
+    - name: kustomize-repo

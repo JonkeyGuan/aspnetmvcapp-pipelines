@@ -1,0 +1,64 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: remote-build-push
+spec:
+  params:
+    - name: appName
+      type: string
+    - name: appVersion
+      type: string
+    - default: win2022
+      name: remoteHost
+      type: string
+    - default: administrator
+      name: remoteUser
+      type: string
+    - default: Myos@123
+      name: remotePassword
+      type: string
+    - default: 'registry.jonkey.cc:5000/aspnetmvcapp-dev'
+      name: imageRepoUrl
+      type: string
+    - default: admin
+      name: imageRepoUser
+      type: string
+    - default: redhat
+      name: imageRepoPassword
+      type: string
+    - default: 'c:\\build'
+      name: buildBaseDir
+      type: string
+    - default: 'shaowenchen/rsync-sshpass:v1'
+      name: runImage
+      type: string
+  steps:
+    - image: $(params.runImage)
+      name: remote-build-push
+      resources: {}
+      script: >
+        workDir=$(params.buildBaseDir)\\$(params.appName)-$(params.appVersion)
+
+        sshpass -p $(params.remotePassword) ssh -o StrictHostKeyChecking=no 
+        $(params.remoteUser)@$(params.remoteHost) "if exist ${workDir} rmdir
+        /s/q  ${workDir} "
+
+        sshpass -p $(params.remotePassword) ssh -o StrictHostKeyChecking=no 
+        $(params.remoteUser)@$(params.remoteHost) "mkdir ${workDir}"
+
+        sshpass -p $(params.remotePassword) scp -pr ./*
+        $(params.remoteUser)@$(params.remoteHost):${workDir}
+
+        sshpass -p $(params.remotePassword) ssh
+        $(params.remoteUser)@$(params.remoteHost) "docker build -t
+        $(params.imageRepoUrl)/$(params.appName):$(params.appVersion) -f
+        ${workDir}\Dockerfile ${workDir} && docker login $(params.imageRepoUrl)
+        -u $(params.imageRepoUser) -p $(params.imageRepoPassword) && docker push
+        $(params.imageRepoUrl)/$(params.appName):$(params.appVersion)"
+
+        sshpass -p $(params.remotePassword) ssh
+        $(params.remoteUser)@$(params.remoteHost) "if exist ${workDir} rmdir
+        /s/q  ${workDir}"
+      workingDir: $(workspaces.source.path)
+  workspaces:
+    - name: source
