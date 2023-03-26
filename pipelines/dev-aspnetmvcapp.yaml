@@ -61,7 +61,7 @@ spec:
             echo
             "image":"$(params.IMAGE_REPO)/$(params.APP_NAME):$(tasks.fetch-repository.results.revision)"
 
-            oc -n devopstest-dev patch deployment $(params.APP_NAME) 
+            oc -n aspnetmvcapp-dev patch deployment $(params.APP_NAME) 
             --patch='{"spec":{"template":{"spec":{
               "containers":[{
                 "name": "$(params.APP_NAME)",
