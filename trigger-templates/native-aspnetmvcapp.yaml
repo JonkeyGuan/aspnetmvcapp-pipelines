@@ -1,0 +1,51 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: native-aspnetmvcapp
+spec:
+  params:
+    - name: git-repo-url
+    - name: git-revision
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: native-aspnetmvcapp-
+      spec:
+        params:
+          - name: GIT_REPO
+            value: $(tt.params.git-repo-url)
+          - name: GIT_REVISION
+            value: $(tt.params.git-revision)
+        pipelineRef:
+          name: dev-native-aspnetmvcapp
+        taskRunSpecs:
+          - pipelineTaskName: build
+            taskPodTemplate:
+              nodeSelector:
+                kubernetes.io/os: windows
+              tolerations:
+                - key: os
+                  operator: Equal
+                  value: Windows
+                  effect: NoSchedule
+              securityContext:
+                runAsNonRoot: false
+                windowsOptions:
+                  runAsUserName: "ContainerAdministrator"
+              volumes:
+              - name: dockersock
+                hostPath:
+                  path: \\.\pipe\docker_engine
+                  type: null
+        workspaces:
+          - name: workspace
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 1Gi
+                storageClassName: smb
+                volumeMode: Filesystem

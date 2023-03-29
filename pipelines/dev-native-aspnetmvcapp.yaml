@@ -1,0 +1,75 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: dev-native-aspnetmvcapp
+spec:
+  params:
+    - default: aspnetmvcapp
+      name: APP_NAME
+      type: string
+    - default: 'http://gitea-git.apps.ocp2.jonkey.cc/jonkey/aspnetmvcapp'
+      name: GIT_REPO
+      type: string
+    - default: ''
+      name: GIT_REVISION
+      type: string
+    - default: 'registry.jonkey.cc:5000/aspnetmvcapp-dev'
+      name: IMAGE_REPO
+      type: string
+    - default: win2022
+      name: BUILD_HOST
+      type: string
+  tasks:
+    - name: fetch-repository
+      params:
+        - name: url
+          value: $(params.GIT_REPO)
+        - name: revision
+          value: $(params.GIT_REVISION)
+        - name: subdirectory
+          value: ''
+        - name: deleteExisting
+          value: 'true'
+      taskRef:
+        kind: Task
+        name: git-clone-revision
+      workspaces:
+        - name: output
+          workspace: workspace
+    - name: build
+      params:
+        - name: appName
+          value: $(params.APP_NAME)
+        - name: appVersion
+          value: $(tasks.fetch-repository.results.revision)
+        - name: imageRepoUrl
+          value: $(params.IMAGE_REPO)
+      runAfter:
+        - fetch-repository
+      taskRef:
+        kind: Task
+        name: windows-build-push
+      workspaces:
+        - name: source
+          workspace: workspace
+    - name: deploy
+      params:
+        - name: SCRIPT
+          value: >-
+            echo
+            "image":"$(params.IMAGE_REPO)/$(params.APP_NAME):$(tasks.fetch-repository.results.revision)"
+
+            oc -n aspnetmvcapp-dev patch deployment $(params.APP_NAME) 
+            --patch='{"spec":{"template":{"spec":{
+              "containers":[{
+                "name": "$(params.APP_NAME)",
+                "image":"$(params.IMAGE_REPO)/$(params.APP_NAME):$(tasks.fetch-repository.results.revision)"
+              }]
+            }}}}'
+      runAfter:
+        - build
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+  workspaces:
+    - name: workspace

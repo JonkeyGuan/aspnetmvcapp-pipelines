@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: windows-build-push
+spec:
+  params:
+    - name: appName
+      type: string
+    - name: appVersion
+      type: string
+    - default: 'registry.jonkey.cc:5000/aspnetmvcapp-dev'
+      name: imageRepoUrl
+      type: string
+    - default: admin
+      name: imageRepoUser
+      type: string
+    - default: Redhat@123
+      name: imageRepoPassword
+      type: string
+    - default: 'docker:windowsservercore-ltsc2022'
+      name: runImage
+      type: string
+  steps:
+    - image: $(params.runImage)
+      name: windows-build-push
+      resources: {}
+      script: >
+        #!win powershell.exe -File
+
+        docker build -t$(params.imageRepoUrl)/$(params.appName):$(params.appVersion) .
+
+        docker login $(params.imageRepoUrl) -u $(params.imageRepoUser) -p $(params.imageRepoPassword)
+
+        docker push $(params.imageRepoUrl)/$(params.appName):$(params.appVersion)"
+
+      workingDir: $(workspaces.source.path)
+      volumeMounts:
+      - mountPath: \\.\pipe\docker_engine
+        name: dockersock
+  workspaces:
+    - name: source
