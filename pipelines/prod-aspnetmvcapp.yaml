@@ -23,7 +23,7 @@ spec:
       description: Kustomize git repo context directory for CD
       name: KUSTOMIZE_GIT_CONTEXT_DIR
       type: string
-    - default: master
+    - default: main
       description: Kustomize git repo branch
       name: KUSTOMIZE_GIT_BRANCH
       type: string
