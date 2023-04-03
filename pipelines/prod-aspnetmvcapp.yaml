@@ -11,7 +11,7 @@ spec:
       description: Source image url without tag
       name: SRC_IMAGE_URL
       type: string
-    - default: 'registry.jonkey.cc:5000/devopstest-prod/aspnetmvcapp'
+    - default: 'registry.jonkey.cc:5000/aspnetmvcapp-prod/aspnetmvcapp'
       description: Destination image url without tag
       name: DEST_IMAGE_URL
       type: string
@@ -71,7 +71,7 @@ spec:
     - name: sync-application
       params:
         - name: application-name
-          value: prod-devopstest-web
+          value: prod-aspnetmvcapp
         - name: flags
           value: '--insecure'
       runAfter:
